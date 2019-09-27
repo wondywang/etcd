@@ -219,7 +219,12 @@ func StartNode(c *Config, peers []Peer) Node {
 	if err != nil {
 		panic(err)
 	}
-	rn.Bootstrap(peers)
+	
+	// Do we need panic here?
+	err = rn.Bootstrap(peers)
+	if err != nil {
+		panic(err)
+	}
 
 	n := newNode(rn)
 
