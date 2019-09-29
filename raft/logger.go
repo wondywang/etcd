@@ -19,6 +19,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
+	"runtime"
+	"strings"
 	"sync"
 )
 
@@ -48,8 +51,21 @@ func SetLogger(l Logger) {
 	raftLoggerMu.Unlock()
 }
 
+func callerLine() string {
+	pc, file, line, _ := runtime.Caller(3)
+	funcname := runtime.FuncForPC(pc).Name()
+	piece := strings.Split(funcname, ".")
+
+	// parent caller
+	pc, file, line, _ = runtime.Caller(4)
+	funcname = runtime.FuncForPC(pc).Name()
+	ppiece := strings.Split(funcname, ".")
+
+	return fmt.Sprintf("%s:%d[%s->%s]", path.Base(file), line, ppiece[len(ppiece)-1], piece[len(piece)-1])
+}
+
 var (
-	defaultLogger = &DefaultLogger{Logger: log.New(os.Stderr, "raft", log.LstdFlags)}
+	defaultLogger = &DefaultLogger{Logger: log.New(os.Stderr, "", log.LstdFlags)}
 	discardLogger = &DefaultLogger{Logger: log.New(ioutil.Discard, "", 0)}
 	raftLoggerMu  sync.Mutex
 	raftLogger    = Logger(defaultLogger)
@@ -128,5 +144,5 @@ func (l *DefaultLogger) Panicf(format string, v ...interface{}) {
 }
 
 func header(lvl, msg string) string {
-	return fmt.Sprintf("%s: %s", lvl, msg)
+	return fmt.Sprintf("%s %s: %s", callerLine(), lvl, msg)
 }

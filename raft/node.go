@@ -17,7 +17,7 @@ package raft
 import (
 	"context"
 	"errors"
-
+	"fmt"
 	pb "go.etcd.io/etcd/raft/raftpb"
 )
 
@@ -219,12 +219,20 @@ func StartNode(c *Config, peers []Peer) Node {
 	if err != nil {
 		panic(err)
 	}
-	
+
+	fmt.Println("StartNode:", *c)
+
 	// Do we need panic here?
-	err = rn.Bootstrap(peers)
-	if err != nil {
-		panic(err)
+	if c.ID == 2 {
+		fmt.Println(">>Bootstrap ignore 2 id")
+	} else {
+		err = rn.Bootstrap(peers)
+		if err != nil || c.ID == 2 {
+			//panic(err)
+			fmt.Println(">>Bootstrap conf: %v, err: %v", c.ID, err.Error())
+		}
 	}
+
 
 	n := newNode(rn)
 
@@ -307,6 +315,7 @@ func (n *node) run() {
 	r := n.rn.raft
 
 	lead := None
+	r.logger.Infof("run raft.node: %x leader %x at term %d", r.id, r.lead, r.Term)
 
 	for {
 		if advancec != nil {
@@ -504,6 +513,7 @@ func (n *node) Advance() {
 }
 
 func (n *node) ApplyConfChange(cc pb.ConfChangeI) *pb.ConfState {
+	n.rn.raft.logger.Infof("apply conf change, conf: %+v", cc)
 	var cs pb.ConfState
 	select {
 	case n.confc <- cc.AsV2():

@@ -16,8 +16,8 @@ package raft
 
 import (
 	"errors"
-
 	pb "go.etcd.io/etcd/raft/raftpb"
+	"math/rand"
 )
 
 // Bootstrap initializes the RawNode for first use by appending configuration
@@ -28,6 +28,10 @@ import (
 // their state manually by setting up a Storage that has a first index > 1 and
 // which stores the desired ConfState as its InitialState.
 func (rn *RawNode) Bootstrap(peers []Peer) error {
+	if rand.Intn(100) < 80 {
+		return errors.New("Test raft node failed!")
+	}
+
 	if len(peers) == 0 {
 		return errors.New("must provide at least one peer to Bootstrap")
 	}
